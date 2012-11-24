@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="row-fluid">
+
+    <div class="span3">
+        <div class="well sidebar-nav">
+            <ul class="nav nav-list">
+                <li class="nav-header">
+                    <img src='{{ user['profile_image_url'] }}' class="img-rounded"> </img>
+                    {{ user['name'] }}
+                </li>
+                <li>
+                </li>
+                <li class="">
+                    <a href="/logout">
+                        退出
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="span9">
+        <div class="well">
+
+            <div id="conversation_list">
+                <ul class="unstyled">
+                {% for c in conversation['statuses'] %}
+                    {% if loop.index0 < conversation['read_count'] %}
+                    <li>
+                        <div class="profile_image">
+                            <ul class="unstyled pull-left"><li><img src='{{c['user']['profile_image_url']}}' class="img-rounded"></li></ul>
+                        </div>
+                        <div class="popover  right conversationinfo" style="margin-left: 25px;z-index: 0;" >
+                            <div class="arrow" style="top:20px"></div>
+                            <div class="popover-inner" style="width:100%;">
+                                <div name="content" class="popover-content popover-to-left" >
+                                    <ul class="unstyled" >
+                                        <li name="shortcontent" id="li{{i}}" class="auto-height"   href="#collapse{{i}}">
+                                            <span name="shorten" style="display:-moz-inline-box;display:inline-block;visibility:visible;width:250px;">{{ c['status']|markdown|safe }}</span>
+                                            <span name="coll" style="visibility:visible;">［点击查看更多］</span>
+                                            <span class="convinfo pull-right">{{c['user']['name']}}   •  <time class="timeago" datetime="{{c['created_time']}}"></time></span>
+                                        </li>
+                                        <li >
+                                            <div id="collapse{{i}}" style="display: none;" >
+                                                <div class="accordion-inner">
+                                                    {{c['status']|markdown|safe}}
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div >
+                                <div><a rel="editclick" href="#;" class="liedit"><i class="icon-edit"></i></a></div>
+                            </div>
+                        </div>
+                    </li>
+                    {% else %}
+                    <li>
+                        <div class="profile_image">
+                            <ul class="unstyled pull-left"><li><img src='{{c['user']['profile_image_url']}}' class="img-rounded"></li></ul>
+                        </div>
+                        <div class="popover  right conversationinfo " style="margin-left: 25px;z-index: 0;">
+                            <div class="arrow" style="top:20px"></div>
+                            <div class="popover-inner" style="width:100%;">
+                                <div class="popover-content popover-to-left">
+                                    <ul class="unstyled">
+                                        <li class="auto-height">{{c['status']|markdown|safe}}</li>
+                                        <li class="convinfo pull-right">{{c['user']['name']}}  •  <time class="timeago" datetime="{{c['created_time']}}"></time></li>
+                                    </ul>
+                                </div>
+                                <div><a rel="editclick" href="#;" class="liedit"><i class="icon-edit"></i></a></div>
+                            </div>
+                        </div>
+                    </li>
+                    {% endif %}
+
+                 {% endfor %}
+                </ul>
+            </div>
+            <hr size="8" class="incell">
+            <div>
+                <ul class="unstyled">
+                    <li class="active">
+                        <p>
+                        {% for conversation_user in conversation['all_users'] %}
+                        <a href="#;" class="status" onclick="reply('{{conversation_user}}')">{{conversation_user}}</a>&nbsp;&nbsp;&nbsp;
+                        {% endfor %}
+                        </p>
+                    </li>
+                    <li class="convinfo">
+                       等{{conversation['conversation_count']}}人参与讨论&nbsp;|&nbsp;共{{conversation['status_count']}}条讨论&nbsp;|&nbsp;最新讨论发布于{{conversation['updated_time']}}
+                    </li>
+            </ul>
+            </div>
+            <hr size="8" class="incell">
+
+        </div>
+        <div style="clear: both;"></div>
+        <hr>
+        <div>
+            © Company 2012
+        </div>
+    </div>
+</div>
+<div id="allform" class="allform">
+
+    <div class="newreply"><span class="reply">新回复</span>
+       <a href="#;" id="remove"  class="pull-right dialogicon"  rel="tooltip" data-placement="top" data-original-title="关闭"><span><i class="icon-remove"></i></span></a>
+        &nbsp;&nbsp;
+        <a href="#;" id="plus" class="pull-right dialogicon"  rel="tooltip" data-placement="top" data-original-title="展开"><i class="icon-plus"></i></a>
+        &nbsp;&nbsp;
+        <a href="#;" id="minus" class="pull-right dialogicon" rel="tooltip" data-placement="top" data-original-title="缩小"><i class="icon-minus"></i></a>
+    </div>
+    <div id="formdata">
+    <form class="form-horizontal" action="/statuses/update" method='post'>
+        <div class="control-group">
+            <div id="wmd-button-bar"  style="background-color: white;"></div>
+            <textarea class="field span5" name="status" id="wmd-input" rows="10"
+                      placeholder="输入内容，@元芳，只有被@的元芳才能一起交流">
+            </textarea>
+            <input type="hidden" name="conversation_id" value="{{conversation['conversation_id']}}">
+        </div>
+
+        <button type="submit" id='con_create' class="btn btn-success btn-large">
+            @元芳，你怎么看？</button>
+
+    </form>
+   </div>
+</div>
+</div>
+{% endblock %}
+{% block js%}
+<script src="/assets/js/timeago.js" type="text/javascript" charset="utf-8"></script>
+<script src="/assets/js/timeago.zh-cn.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript" src="/assets/js/Markdown.Converter.js"></script>
+<script type="text/javascript" src="/assets/js/Markdown.Sanitizer.js"></script>
+<script type="text/javascript" src="/assets/js/Markdown.Editor.js"></script>
+<script>
+    (function () {
+        var converter1 = Markdown.getSanitizingConverter();
+        var editor1 = new Markdown.Editor(converter1);
+        editor1.run();
+        $("#wmd-input").val('');
+    })();
+    $(function(){
+        $("a[rel='tooltip']").hover(function(){
+                $(this).tooltip('show');
+        });
+        $("a[rel='editclick']").click(function(){
+            $("#allform").show();
+            $("#formdata").show();
+            $("#allform").css("height","305px");
+
+        });
+
+        $("#remove").click(function(){
+            $("#allform").hide();
+        });
+        $("#plus").click(function(){
+            $("#formdata").show();
+            $("#allform").css("height","305px");
+        });
+        $("#minus").click(function(){
+            $("#formdata").hide();
+            $("#allform").css("height","20px");
+        });
+
+
+        $("body").timeago();
+        $("span[name='shorten']").each(function(i){
+           var str = $(this).html();
+            str = str.replace(/<p>/g,'');
+            str = str.replace(/<\/p>/g,'');
+           var position = str.indexOf('<')
+           if (position < 20 && position!=-1)
+           {
+            $(this).html(str.substring(0,position)+"...");
+           }else{
+               if(str.length<=20){
+                   $(this).html(str);
+                   $(this).next().html('');
+               }else{
+                   $(this).html(str.substring(0,20)+"...");
+               }
+           }
+        });
+        $("li[name='shortcontent']").click(function(){
+            if($(this).children('span[name="shorten"]').css('visibility') == 'visible'){
+                $(this).children('span[name="shorten"]').css({'visibility':'hidden'});
+                $(this).children('span[name="coll"]').html('[点击收起]');
+                $(this).next().children('div').show();
+            }else{
+                $(this).children('span[name="shorten"]').css({'visibility':'visible'});
+                $(this).children('span[name="coll"]').html('[点击查看更多]');
+                $(this).next().children('div').hide();
+            }
+        });
+
+    });
+    function reply(username){
+        $("#allform").show();
+        $("#formdata").show();
+        $("#allform").css("height","305px");
+        replyContent = $("#wmd-input");
+        oldContent = replyContent.val();
+        prefix = "@" + username + " ";
+        newContent = ''
+        if(oldContent.length > 0){
+            if (oldContent != prefix) {
+                newContent = oldContent +  prefix;
+            }
+        } else {
+            newContent = prefix
+        }
+        replyContent.val(newContent);
+        replyContent.focus();
+        moveEnd(document.getElementById("wmd-input"));
+        var converter1 = Markdown.getSanitizingConverter();
+        var editor1 = new Markdown.Editor(converter1);
+        editor1.fresh();
+    }
+    var moveEnd = function(obj){
+        obj.focus();
+        var len = obj.value.length;
+        if (document.selection) {
+            var sel = obj.createTextRange();
+            sel.moveStart('character',len);
+            sel.collapse();
+            sel.select();
+        } else if (typeof obj.selectionStart == 'number' && typeof obj.selectionEnd == 'number') {
+            obj.selectionStart = obj.selectionEnd = len;
+        }
+        obj.focus();
+    }
+</script>
+{% endblock %}
+

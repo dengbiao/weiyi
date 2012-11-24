@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+
+{% block body %}
+<div class="row-fluid">
+    <div class="span3">
+        <div class="well sidebar-nav">
+            <ul class="nav nav-list">
+                <li class="nav-header">
+                    <img src='{{ user['profile_image_url'] }}' class="img-rounded"> </img>
+                    {{ user['name'] }}
+                </li>
+                <li>
+                </li>
+                <li class="">
+                    <a href="/logout">
+                        退出
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="span9">
+        <div class="well" style="float:left; width:96%;">
+
+                <button type="submit" id='content_create' class="btn btn-success btn-large">
+                    新建话题</button>
+
+            <hr size="8" class="incell">
+            <div id="conversation_list">
+                <ul class="unstyled">
+                    {% for c in conv %}
+                    <li>
+                        <div class="profile_image">
+                            <ul class="unstyled"><li><img src='{{c['user']['profile_image_url']}}' class="img-rounded"></li></ul>
+                        </div>
+                        <div class="popover right conversationinfo " style="margin-left: 25px;z-index: 0;">
+                            <div class="arrow" style="top:25px"></div>
+                            <div class="popover-inner" style="width:100%;">
+                                <div class="popover-content popover-to-left" >
+                                    <ul class="unstyled" >
+                                        <li class="auto-height"><a class="status" href="show/{{c['conversation_id']}}">{{c['status']|markdown|safe}}</a></li>
+                                        <li class="addinfo">
+                                            <div class="pull-left">
+                                                {% for latest_user in c['latest_users'] %}
+                                                @{{ latest_user }}&nbsp;&nbsp;&nbsp;
+                                                {% endfor %}
+                                            </div>
+                                            <div class="pull-right"> {{c['conversation_count']}}人参与  •  <time class="timeago" datetime="{{c['updated_time']}}"></time></div>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="badge-right">
+                                    <ul  class="unstyled">
+                                        <li class="badge-middle"><a href="show/{{c['conversation_id']}}"><span class="badge badge-success">{{c['status_count']}}</span></a></li>
+                                    </ul>
+                                </div>
+                                <div class="clear"></div>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="clear"></div>
+        <hr>
+        <div>
+
+            © Company 2012
+        </div>
+    </div>
+</div>
+
+</div>
+
+<div id="allform" class="allform">
+
+    <div class="newreply"><span class="reply">新建话题</span>
+        <a href="#;" id="remove"  class="pull-right dialogicon"  rel="tooltip" data-placement="top" data-original-title="关闭"><span><i class="icon-remove"></i></span></a>
+        &nbsp;&nbsp;
+        <a href="#;" id="plus" class="pull-right dialogicon"  rel="tooltip" data-placement="top" data-original-title="展开"><i class="icon-plus"></i></a>
+        &nbsp;&nbsp;
+        <a href="#;" id="minus" class="pull-right dialogicon" rel="tooltip" data-placement="top" data-original-title="缩小"><i class="icon-minus"></i></a>
+    </div>
+    <div id="formdata">
+        <form class="form-horizontal" action="/statuses/update" method='post'>
+            <div class="control-group">
+                <div id="wmd-button-bar"  style="background-color: white;"></div>
+                <textarea class="field span5" name="status" id="wmd-input" rows="10"
+                          placeholder="输入内容，@元芳，只有被@的元芳才能一起交流">
+                </textarea>
+            </div>
+
+            <button type="submit" id='con_create' class="btn btn-success btn-large">
+                @元芳，你怎么看？</button>
+
+        </form>
+    </div>
+</div>
+</div>
+{% endblock %}
+{% block js%}
+
+<script src="/assets/js/timeago.js" type="text/javascript" charset="utf-8"></script>
+<script src="/assets/js/timeago.zh-cn.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript" src="/assets/js/Markdown.Converter.js"></script>
+<script type="text/javascript" src="/assets/js/Markdown.Sanitizer.js"></script>
+<script type="text/javascript" src="/assets/js/Markdown.Editor.js"></script>
+<script>
+    (function () {
+        var converter1 = Markdown.getSanitizingConverter();
+        var editor1 = new Markdown.Editor(converter1);
+        editor1.run();
+        $("#wmd-input").val('');
+    })();
+    $(function(){
+        $("a[rel='tooltip']").hover(function(){
+            $(this).tooltip('show');
+        });
+        $("#content_create").click(function(){
+            $("#allform").show();
+            $("#formdata").show();
+            $("#allform").css("height","305px");
+
+        });
+
+        $("#remove").click(function(){
+            $("#allform").hide();
+        });
+        $("#plus").click(function(){
+            $("#formdata").show();
+            $("#allform").css("height","305px");
+        });
+        $("#minus").click(function(){
+            $("#formdata").hide();
+            $("#allform").css("height","20px");
+        });
+        $("body").timeago();
+    });
+
+</script>
+{% endblock %}
