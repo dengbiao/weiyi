@@ -37,8 +37,8 @@
                                 <div name="content" class="popover-content popover-to-left" >
                                     <ul class="unstyled" >
                                         <li name="shortcontent" id="li{{i}}" class="auto-height"   href="#collapse{{i}}">
-                                            <span name="shorten" style="display:-moz-inline-box;display:inline-block;visibility:visible;width:250px;">{{ c['status']|markdown|safe }}</span>
-                                            <span name="coll" style="visibility:visible;">［点击查看更多］</span>
+                                            <span name="shorten" class="shorten">{{ c['status']|markdown|safe }}</span>
+                                            <span name="coll" style="visibility:visible;">[查看更多]</span>
                                             <span class="convinfo pull-right">{{c['user']['name']}}   •  <time class="timeago" datetime="{{c['created_time']}}"></time></span>
                                         </li>
                                         <li >
@@ -167,23 +167,7 @@
 
 
         $("body").timeago();
-        $("span[name='shorten']").each(function(i){
-           var str = $(this).html();
-            str = str.replace(/<p>/g,'');
-            str = str.replace(/<\/p>/g,'');
-           var position = str.indexOf('<')
-           if (position < 20 && position!=-1)
-           {
-            $(this).html(str.substring(0,position)+"...");
-           }else{
-               if(str.length<=20){
-                   $(this).html(str);
-                   $(this).next().html('');
-               }else{
-                   $(this).html(str.substring(0,20)+"...");
-               }
-           }
-        });
+
         $("li[name='shortcontent']").click(function(){
             if($(this).children('span[name="shorten"]').css('visibility') == 'visible'){
                 $(this).children('span[name="shorten"]').css({'visibility':'hidden'});
@@ -191,8 +175,27 @@
                 $(this).next().children('div').show();
             }else{
                 $(this).children('span[name="shorten"]').css({'visibility':'visible'});
-                $(this).children('span[name="coll"]').html('[点击查看更多]');
+                $(this).children('span[name="coll"]').html('[查看更多]');
                 $(this).next().children('div').hide();
+            }
+        });
+
+        $("span[name='shorten']").each(function(i){
+            var str = $(this).html();
+            str = str.replace(/<p>/g,'');
+            str = str.replace(/<\/p>/g,'');
+            var position = str.indexOf('<')
+            if (position < 20 && position!=-1)
+            {
+                $(this).html(str.substring(0,position)+"...");
+            }else{
+                if(str.length<=20){
+                    $(this).html(str);
+                    $(this).next().html('');
+                    $(this).parent().unbind('click');
+                }else{
+                    $(this).html(str.substring(0,20)+"...");
+                }
             }
         });
 
