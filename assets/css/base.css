@@ -113,3 +113,10 @@ span.reply{
 #plus:hover{
     background-color:white;
 }
+
+span.shorten{
+    display:-moz-inline-box;
+    display:inline-block;
+    visibility:visible;
+    width:250px;
+}
