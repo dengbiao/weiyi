@@ -28,9 +28,9 @@ li.addinfo {
     color:#999;
 }
 
-li.convinfo{
-    font-size: 11px;
-    color: #999;
+li.userinfo{
+    font-size: 12px;
+    color: black;
 }
 span.convinfo{
     font-size: 11px;
@@ -118,5 +118,4 @@ span.shorten{
     display:-moz-inline-box;
     display:inline-block;
     visibility:visible;
-    width:250px;
 }

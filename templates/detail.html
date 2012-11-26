@@ -26,7 +26,7 @@
             <div id="conversation_list">
                 <ul class="unstyled">
                 {% for c in conversation['statuses'] %}
-                    {% if loop.index0 < conversation['read_count'] %}
+
                     <li>
                         <div class="profile_image">
                             <ul class="unstyled pull-left"><li><img src='{{c['user']['profile_image_url']}}' class="img-rounded"></li></ul>
@@ -36,44 +36,20 @@
                             <div class="popover-inner" style="width:100%;">
                                 <div name="content" class="popover-content popover-to-left" >
                                     <ul class="unstyled" >
-                                        <li name="shortcontent" id="li{{i}}" class="auto-height"   href="#collapse{{i}}">
-                                            <span name="shorten" class="shorten">{{ c['status']|markdown|safe }}</span>
-                                            <span name="coll" style="visibility:visible;">[查看更多]</span>
-                                            <span class="convinfo pull-right">{{c['user']['name']}}   •  <time class="timeago" datetime="{{c['created_time']}}"></time></span>
+                                        <li  class="auto-height"   href="#collapse{{i}}">
+                                            <span class="userinfo "><strong>{{c['user']['name']}}</strong></span>
+                                            <span class="convinfo ">&nbsp;&nbsp;<time class="timeago" datetime="{{c['created_time']}}"></time></span>
                                         </li>
-                                        <li >
-                                            <div id="collapse{{i}}" style="display: none;" >
-                                                <div class="accordion-inner">
-                                                    {{c['status']|markdown|safe}}
-                                                </div>
-                                            </div>
+                                        <li name="shortcontent"  class="auto-height" style="margin-top:5px;"  href="#collapse{{i}}">
+                                            <span name="shorten" class="shorten">{{ c['status']|markdown|safe}}</span>
                                         </li>
+
                                     </ul>
                                 </div >
-                                <div><a rel="editclick" href="#;" class="liedit"><i class="icon-edit"></i></a></div>
+                                <div><a rel="editclick" href="#;" title="回复" class="liedit"><i class="icon-edit"></i></a></div>
                             </div>
                         </div>
                     </li>
-                    {% else %}
-                    <li>
-                        <div class="profile_image">
-                            <ul class="unstyled pull-left"><li><img src='{{c['user']['profile_image_url']}}' class="img-rounded"></li></ul>
-                        </div>
-                        <div class="popover  right conversationinfo " style="margin-left: 25px;z-index: 0;">
-                            <div class="arrow" style="top:20px"></div>
-                            <div class="popover-inner" style="width:100%;">
-                                <div class="popover-content popover-to-left">
-                                    <ul class="unstyled">
-                                        <li class="auto-height">{{c['status']|markdown|safe}}</li>
-                                        <li class="convinfo pull-right">{{c['user']['name']}}  •  <time class="timeago" datetime="{{c['created_time']}}"></time></li>
-                                    </ul>
-                                </div>
-                                <div><a rel="editclick" href="#;" class="liedit"><i class="icon-edit"></i></a></div>
-                            </div>
-                        </div>
-                    </li>
-                    {% endif %}
-
                  {% endfor %}
                 </ul>
             </div>
@@ -168,36 +144,7 @@
 
         $("body").timeago();
 
-        $("li[name='shortcontent']").click(function(){
-            if($(this).children('span[name="shorten"]').css('visibility') == 'visible'){
-                $(this).children('span[name="shorten"]').css({'visibility':'hidden'});
-                $(this).children('span[name="coll"]').html('[点击收起]');
-                $(this).next().children('div').show();
-            }else{
-                $(this).children('span[name="shorten"]').css({'visibility':'visible'});
-                $(this).children('span[name="coll"]').html('[查看更多]');
-                $(this).next().children('div').hide();
-            }
-        });
 
-        $("span[name='shorten']").each(function(i){
-            var str = $(this).html();
-            str = str.replace(/<p>/g,'');
-            str = str.replace(/<\/p>/g,'');
-            var position = str.indexOf('<')
-            if (position < 20 && position!=-1)
-            {
-                $(this).html(str.substring(0,position)+"...");
-            }else{
-                if(str.length<=20){
-                    $(this).html(str);
-                    $(this).next().html('');
-                    $(this).parent().unbind('click');
-                }else{
-                    $(this).html(str.substring(0,20)+"...");
-                }
-            }
-        });
 
     });
     function reply(username){

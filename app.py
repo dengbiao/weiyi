@@ -9,7 +9,7 @@ import redis
 from functools import wraps
 from weibo import Client
 import uuid, time
-from flask import Response,request,make_response,abort, redirect, url_for,render_template
+from flask import Markup,Response,request,make_response,abort, redirect, url_for,render_template
 from utils.markdown import markdown
 import re
 import json
@@ -22,7 +22,7 @@ app = Flask(__name__, static_folder='assets')
 app.config.from_object("settings")
 
 def markdown_filter(s):
-    return markdown(s)
+    return Markup(markdown(s,safe_mode = 'escape'))
 
 app.jinja_env.filters['markdown'] = markdown_filter
 
@@ -170,6 +170,7 @@ def logout():
 def conversation_create():
     conversation_id = request.form.get('conversation_id',None)
     status = request.form.get('status')
+    logging.error(status)
     redirect_url = "/"
     # database
     status_id = app.redis.incr('count:status')
