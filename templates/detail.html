@@ -27,7 +27,7 @@
             <div id="conversation_list">
                 <ul class="unstyled">
                 {% for c in conversation['statuses'] %}
-
+                    {% if loop.index0 < conversation['read_count'] %}
                     <li>
                         <div class="profile_image">
                             <ul class="unstyled pull-left"><li><img src='{{c['user']['profile_image_url']}}' class="img-rounded"></li></ul>
@@ -42,15 +42,39 @@
                                             <span class="convinfo ">&nbsp;&nbsp;<time class="timeago" datetime="{{c['created_time']}}"></time></span>
                                         </li>
                                         <li name="shortcontent"  class="auto-height" style="margin-top:5px;"  href="#collapse{{i}}">
-                                            <span name="shorten" class="shorten">{{ c['status']|markdown|safe}}</span>
+                                            <span name="shorten" class="shorten" style="display:block;">{{ c['status']|markdown|safe}}</span>
+                                            <span name="content" class="shorten" style="display:none;"></span>
                                         </li>
-
                                     </ul>
                                 </div >
                                 <div><a rel="editclick" href="#;" title="回复" class="liedit"><i class="icon-edit"></i></a></div>
                             </div>
                         </div>
                     </li>
+                    {% else %}
+                    <li>
+                        <div class="profile_image">
+                            <ul class="unstyled pull-left"><li><img src='{{c['user']['profile_image_url']}}' class="img-rounded"></li></ul>
+                        </div>
+                        <div class="popover  right conversationinfo" style="margin-left: 25px;z-index: 0;" >
+                            <div class="arrow" style="top:20px"></div>
+                            <div class="popover-inner" style="width:100%;">
+                                <div name="content" class="popover-content popover-to-left" >
+                                    <ul class="unstyled" >
+                                        <li  class="auto-height"   href="#collapse{{i}}">
+                                            <span class="userinfo "><strong>{{c['user']['name']}}</strong></span>
+                                            <span class="convinfo ">&nbsp;&nbsp;<time class="timeago" datetime="{{c['created_time']}}"></time></span>
+                                        </li>
+                                        <li name="shortcontent"  class="auto-height" style="margin-top:5px;"  href="#collapse{{i}}">
+                                            <span  class="shorten" style="display:block;">{{ c['status']|markdown|safe}}</span>
+                                        </li>
+                                    </ul>
+                                </div >
+                                <div><a rel="editclick" href="#;" title="回复" class="liedit"><i class="icon-edit"></i></a></div>
+                            </div>
+                        </div>
+                    </li>
+                    {% endif %}
                  {% endfor %}
                 </ul>
             </div>
@@ -128,6 +152,21 @@
             $("#formdata").show();
             $("#allform").css("height","305px");
 
+        });
+
+        $("span[name='shorten']").each(function(i){
+            var str = $(this).html();
+            if(str.length<=200){
+                $(this).html(str);
+            }else{
+                $(this).html(str.substring(0,200)+"...<a rel='content' href='#;'>[查看更多]</a>");
+                $(this).next().html(str);
+            }
+        });
+
+        $("a[rel='content']").click(function(){
+            $(this).parents('.shorten').hide();
+            $(this).parents('.shorten').next().show();
         });
 
         $("#remove").click(function(){
