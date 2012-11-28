@@ -136,6 +136,7 @@
 <script type="text/javascript" src="/assets/js/Markdown.Converter.js"></script>
 <script type="text/javascript" src="/assets/js/Markdown.Sanitizer.js"></script>
 <script type="text/javascript" src="/assets/js/Markdown.Editor.js"></script>
+<script type="text/javascript" src="/assets/js/bootstrap.typeahead.js"></script>
 <script>
     (function () {
         var converter1 = Markdown.getSanitizingConverter();
@@ -154,6 +155,14 @@
 
         });
 
+
+        var contacts = new Array() ;
+        {% for con in contacts %}
+            contacts[{{loop.index0}}]='{{con|safe}}';
+            {% endfor %}
+        $('#wmd-input').typeahead({
+            source: contacts
+        });
         $("span[name='shorten']").each(function(i){
             var str = $(this).html();
             if(str.length<=200){
@@ -172,6 +181,7 @@
         $("#remove").click(function(){
             $("#allform").hide();
         });
+
         $("#plus").click(function(){
             $("#formdata").show();
             $("#allform").css("height","305px");
@@ -205,9 +215,7 @@
         replyContent.val(newContent);
         replyContent.focus();
         moveEnd(document.getElementById("wmd-input"));
-        var converter1 = Markdown.getSanitizingConverter();
-        var editor1 = new Markdown.Editor(converter1);
-        editor1.fresh();
+
     }
     var moveEnd = function(obj){
         obj.focus();

@@ -108,6 +108,7 @@
 <script type="text/javascript" src="/assets/js/Markdown.Converter.js"></script>
 <script type="text/javascript" src="/assets/js/Markdown.Sanitizer.js"></script>
 <script type="text/javascript" src="/assets/js/Markdown.Editor.js"></script>
+<script type="text/javascript" src="/assets/js/bootstrap.typeahead.js"></script>
 <script>
     (function () {
         var converter1 = Markdown.getSanitizingConverter();
@@ -124,6 +125,14 @@
             $("#formdata").show();
             $("#allform").css("height","305px");
 
+        });
+
+        var contacts = new Array() ;
+        {% for con in contacts %}
+            contacts[{{loop.index0}}]='{{con|safe}}';
+        {% endfor %}
+        $('#wmd-input').typeahead({
+            source: contacts
         });
 
         $("#remove").click(function(){

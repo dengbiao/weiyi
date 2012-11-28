@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import gevent.monkey
-gevent.monkey.patch_all()
+#import gevent.monkey
+#gevent.monkey.patch_all()
 
 
 from flask import Flask
@@ -73,10 +73,11 @@ def home():
             c['updated_time'] = time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(float(c['updated_time'])))
             c['user'] = app.redis.hgetall('user:%s'%c['user_name'])
             conv.append(c)
-        return render_template('home.html', user=app.user, conv=conv,markdown = markdown)
+        contacts = app.redis.zrange('user:%s:contact'%app.user['name'], 0, -1, False)
+        con_dict = [unicode(con,"utf8") for con in contacts]
+        return render_template('home.html', user=app.user, conv=conv,contacts = con_dict)
     else:
         return redirect('/register')
-
 
 
 
@@ -150,7 +151,7 @@ def _on_login( weibo, c):
 def register():
     if request.method == 'POST':
         resp = make_response(redirect('/'))
-        email = request.args.get('email')
+        email = request.form.get('email',None)
         app.redis.hset('user:%s'%app.user['name'], 'email', email)
         resp.set_cookie('email',email)
         return resp
@@ -164,19 +165,26 @@ def logout():
     resp.set_cookie('access_token','')
     return resp
 
+@app.route('/contact',methods=['GET'])
+@access_token
+def contact():
+    contacts = app.redis.zrange('user:%s:contact'%app.user['name'], 0, -1, False)
+    return jsonwriteNotAscii(contacts)
+
+
 
 @app.route('/statuses/update',methods=['POST'])
 @access_token
 def conversation_create():
     conversation_id = request.form.get('conversation_id',None)
     status = request.form.get('status')
-    logging.error(status)
+    #logging.error(status)
     redirect_url = "/"
     # database
     status_id = app.redis.incr('count:status')
     app.redis.hmset('status:%s'%(status_id), {'created_time':time.time(), 'status':status, 'user_name': app.user['name'] })
     if conversation_id :
-        access =app.redis.zscore('conversation:%s:access'%conversation_id, request.cookies.get('username'))
+        access =app.redis.zscore('conversation:%s:access'%conversation_id, app.user['name'])
         logging.info(access)
         if access :
             redirect_url = "/show/%s"%(conversation_id)
@@ -186,7 +194,7 @@ def conversation_create():
     else :
         conversation_id = app.redis.incr('count:conversation')
         app.redis.hmset( 'conversation:%s'%( conversation_id), {'updated_time':time.time(), 'status':status, 'user_name': app.user['name'] } )
-        app.redis.zadd( 'conversation:%s:access'%conversation_id, request.cookies.get('username'), int(time.time()))
+        app.redis.zadd( 'conversation:%s:access'%conversation_id, app.user['name'], int(time.time()))
     app.redis.zadd('user:%s:conversation_list'%app.user['name'], conversation_id, time.time())
     app.redis.rpush('conversation:%s:statuses'%conversation_id, status_id)
 
@@ -242,7 +250,19 @@ def conversation_show(conversation_id):
     for s in c['statuses']:
         s['user'] = app.redis.hgetall( 'user:%s'%s['user_name'])
         s['created_time'] = time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(float(s['created_time'])))
-    return render_template("detail.html",user=app.user,conversation = c,markdown = markdown)
+    contacts = app.redis.zrange('user:%s:contact'%app.user['name'], 0, -1, False)
+    con_dict = [unicode(con,"utf8") for con in contacts]
+    return render_template("detail.html",user=app.user,conversation = c,contacts=con_dict)
+
+
+def jsonwriteNotAscii(chunk):
+    jsonp_callback = request.args.get('jsonp_callback', '')
+    if request.method == 'GET' and isinstance(jsonp_callback, (str, unicode)):
+        js = "%s(%s)" % (jsonp_callback, json.dumps(chunk, default = json_default,ensure_ascii=False))
+    else:
+        js =  json.dumps( chunk, default = json_default,ensure_ascii=False )
+    resp = Response(js, status=200, mimetype='application/json; charset=UTF-8')
+    return resp
 
 def jsonwrite(chunk):
     jsonp_callback = request.args.get('jsonp_callback', '')
@@ -266,7 +286,7 @@ def  json_default(obj):
 
 
 if __name__ == "__main__" :
-    app.run('0.0.0.0', port=8888, debug=True)
+    app.run( port=8888,debug=True)
 
 
 
