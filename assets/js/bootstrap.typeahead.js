@@ -59,17 +59,56 @@
             var pos = $.extend({}, this.$element.offset(), {
                 height: this.$element[0].offsetHeight
             })
-            var cpos = this.selection();
+            var cpos = this.position();
+
+            if(cpos.left > 1000){
+                cpos.left = 1000
+                cpos.top = cpos.top+20
+            }
+            cpos.top = cpos.top > (pos.top+pos.height) ? (pos.top+pos.height) : cpos.top
             this.$menu.css({
-                top: pos.top + 40
-                , left: pos.left + 200
+                top: cpos.top
+                , left: cpos.left
             })
 
             this.$menu.show()
             this.shown = true
             return this
         }
-
+        ,position: function(){
+            var content = this.$element.val();
+            var pos = $.extend({}, this.$element.offset(), {
+                height: this.$element[0].offsetHeight
+            })
+            $("#hidestatus").css({
+                top: pos.top
+                , left: pos.left
+            })
+            $("#hidestatus").empty();
+            $("#hidestatus").html(this.format(content));
+            $("#hidestatus").append('<span id="spancontent"></span>')
+            var cpos = $.extend({}, $('#spancontent').offset(), {
+                height: this.$element[0].offsetHeight
+            })
+            return cpos;
+        }
+        , format: function(s) {
+            var q= {
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "\\": "&#92;",
+                "&": "&amp;",
+                "'": "&#039;",
+                "\r": "",
+                "\n": "<br>",
+                " ":"&nbsp;"
+            };
+            var o = /<|>|\'|\"|&|\\|\r\n|\n| /gi;
+            return s.replace(o, function(r) {
+                return q[r]
+            });
+        }
         , hide: function () {
             this.$menu.hide()
             this.shown = false

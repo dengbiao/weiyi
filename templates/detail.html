@@ -116,9 +116,10 @@
     <form class="form-horizontal" action="/statuses/update" method='post'>
         <div class="control-group">
             <div id="wmd-button-bar"  style="background-color: white;"></div>
-            <textarea class="field span5" name="status" id="wmd-input" rows="10"
+            <textarea class="span5" name="status" id="wmd-input" rows="10"
                       placeholder="输入内容，@元芳，只有被@的元芳才能一起交流">
             </textarea>
+
             <input type="hidden" name="conversation_id" value="{{conversation['conversation_id']}}">
         </div>
 
@@ -129,6 +130,7 @@
    </div>
 </div>
 </div>
+<div id="hidestatus" class="span5" style="z-index:-9999;position:absolute;margin-left:5px;margin-top:5px;font-size: 14px;line-height: 20px;-webkit-border-radius: 3px;-moz-border-radius: 3px;border-radius: 3px;"></div>
 {% endblock %}
 {% block js%}
 <script src="/assets/js/timeago.js" type="text/javascript" charset="utf-8"></script>
