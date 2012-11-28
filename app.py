@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#import gevent.monkey
-#gevent.monkey.patch_all()
+import gevent.monkey
+gevent.monkey.patch_all()
 
 
 from flask import Flask
@@ -74,8 +74,7 @@ def home():
             c['user'] = app.redis.hgetall('user:%s'%c['user_name'])
             conv.append(c)
         contacts = app.redis.zrange('user:%s:contact'%app.user['name'], 0, -1, False)
-        con_dict = [unicode(con,"utf8") for con in contacts]
-        return render_template('home.html', user=app.user, conv=conv,contacts = con_dict)
+        return render_template('home.html', user=app.user, conv=conv,contacts = contacts)
     else:
         return redirect('/register')
 
@@ -251,8 +250,7 @@ def conversation_show(conversation_id):
         s['user'] = app.redis.hgetall( 'user:%s'%s['user_name'])
         s['created_time'] = time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(float(s['created_time'])))
     contacts = app.redis.zrange('user:%s:contact'%app.user['name'], 0, -1, False)
-    con_dict = [unicode(con,"utf8") for con in contacts]
-    return render_template("detail.html",user=app.user,conversation = c,contacts=con_dict)
+    return render_template("detail.html",user=app.user,conversation = c,contacts=contacts)
 
 
 def jsonwriteNotAscii(chunk):
@@ -286,7 +284,7 @@ def  json_default(obj):
 
 
 if __name__ == "__main__" :
-    app.run(port=8888,debug=True)
+    app.run('0.0.0.0',port=8888,debug=True)
 
 
 
