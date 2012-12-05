@@ -9,7 +9,7 @@ import redis
 from functools import wraps
 from weibo import Client
 import uuid, time
-from flask import Markup,Response,request,make_response,abort, redirect, url_for,render_template
+from flask import Markup, Response, request, make_response, abort, redirect, url_for, render_template, g
 from utils.markdown import markdown
 import re
 import json
@@ -38,17 +38,17 @@ app.client = get_client
 def access_token(method):
     @wraps(method)
     def wrapper(*args, **kwargs):
-        app.access_token = request.cookies.get('access_token', request.args.get('access_token', '') )
-        logging.info(app.access_token)
-        app.session = {}
-        app.user = {}
-        if app.access_token :
-            app.session = app.redis.hgetall( 'session:%s'%app.access_token )
-            logging.info(app.session)
-        if app.session :
-            app.user = app.redis.hgetall('user:%s'%app.session['user_name'])
-            logging.info(app.user)
-        if not app.user :
+        g.access_token = request.cookies.get('access_token', request.args.get('access_token', '') )
+        logging.info(g.access_token)
+        g.session = {}
+        g.user = {}
+        if g.access_token :
+            g.session = app.redis.hgetall( 'session:%s'%g.access_token )
+            logging.info(g.session)
+        if g.session :
+            g.user = app.redis.hgetall('user:%s'%g.session['user_name'])
+            logging.info(g.user)
+        if not g.user :
             return render_template('index.html')
         else:
             return method(*args, **kwargs)
@@ -58,23 +58,23 @@ def access_token(method):
 @app.route('/', methods=['GET'])
 @access_token
 def home():
-    if not app.user :
+    if not g.user :
         return render_template('index.html')
-    if app.user.get('email','') :
-        conversation_list = app.redis.zrange( 'user:%s:conversation_list'%app.user['name'], 0, -1, False )
+    if g.user.get('email','') :
+        conversation_list = app.redis.zrange( 'user:%s:conversation_list'%g.user['name'], 0, -1, False )
         conv = []
         for i in conversation_list :
             c = app.redis.hgetall( 'conversation:%s'%i)
             c['conversation_count'] = app.redis.zcard('conversation:%s:access'%i)
             c['latest_users'] = app.redis.zrevrange('conversation:%s:access'%i,0,4,False)
-            c['status_count'] = app.redis.llen('conversation:%s:statuses'%i)
+            c['status_count'] = app.redis.zcard('conversation:%s:statuses'%i)
             c['conversation_id'] = i
             c['user'] = app.redis.hgetall( 'user:%s'%c['user_name'])
             c['updated_time'] = time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(float(c['updated_time'])))
             c['user'] = app.redis.hgetall('user:%s'%c['user_name'])
             conv.append(c)
-        contacts = app.redis.zrange('user:%s:contact'%app.user['name'], 0, -1, False)
-        return render_template('home.html', user=app.user, conv=conv,contacts = contacts)
+        contacts = app.redis.zrange('user:%s:contact'%g.user['name'], 0, -1, False)
+        return render_template('home.html', user=g.user, conv=conv,contacts = contacts)
     else:
         return redirect('/register')
 
@@ -151,11 +151,11 @@ def register():
     if request.method == 'POST':
         resp = make_response(redirect('/'))
         email = request.form.get('email',None)
-        app.redis.hset('user:%s'%app.user['name'], 'email', email)
+        app.redis.hset('user:%s'%g.user['name'], 'email', email)
         resp.set_cookie('email',email)
         return resp
     else:
-        return render_template('register.html', user=app.user['name'])
+        return render_template('register.html', user=g.user['name'])
 
 
 @app.route('/logout')
@@ -167,8 +167,8 @@ def logout():
 @app.route('/contact',methods=['GET'])
 @access_token
 def contact():
-    contacts = app.redis.zrange('user:%s:contact'%app.user['name'], 0, -1, False)
-    return jsonwriteNotAscii(contacts)
+    contacts = app.redis.zrange('user:%s:contact'%g.user['name'], 0, -1, False)
+    return jsonwrite(contacts)
 
 
 
@@ -181,21 +181,21 @@ def conversation_create():
     redirect_url = "/"
     # database
     status_id = app.redis.incr('count:status')
-    app.redis.hmset('status:%s'%(status_id), {'created_time':time.time(), 'status':status, 'user_name': app.user['name'] })
+    app.redis.hmset('status:%s'%(status_id), {'created_time':time.time(), 'status':status, 'user_name': g.user['name'] })
     if conversation_id :
-        access =app.redis.zscore('conversation:%s:access'%conversation_id, app.user['name'])
+        access =app.redis.zscore('conversation:%s:access'%conversation_id, g.user['name'])
         logging.info(access)
         if access :
             redirect_url = "/show/%s"%(conversation_id)
-            app.redis.hmset( 'conversation:%s'%(conversation_id), {'updated_time':time.time(), 'status':status, 'user_name': app.user['name'] } )
+            app.redis.hmset( 'conversation:%s'%(conversation_id), {'updated_time':time.time(), 'status':status, 'user_name': g.user['name'] } )
         else :
             abort(403)
     else :
         conversation_id = app.redis.incr('count:conversation')
-        app.redis.hmset( 'conversation:%s'%( conversation_id), {'updated_time':time.time(), 'status':status, 'user_name': app.user['name'] } )
-        app.redis.zadd( 'conversation:%s:access'%conversation_id, app.user['name'], int(time.time()))
-    app.redis.zadd('user:%s:conversation_list'%app.user['name'], conversation_id, time.time())
-    app.redis.rpush('conversation:%s:statuses'%conversation_id, status_id)
+        app.redis.hmset( 'conversation:%s'%( conversation_id), {'updated_time':time.time(), 'status':status, 'user_name': g.user['name'] } )
+        app.redis.zadd( 'conversation:%s:access'%conversation_id, g.user['name'], int(time.time()))
+    app.redis.zadd('user:%s:conversation_list'%g.user['name'], conversation_id, time.time())
+    app.redis.zadd('conversation:%s:statuses'%conversation_id, status_id, time.time())
 
     at_re = re.compile(r'^@(?P<at>\S+)')
     at_names = [  at_re.match(k) for k in  status.split()  ]
@@ -203,7 +203,7 @@ def conversation_create():
     at_not_exists_users =  ( at for at in at_list if app.redis.exists( 'user:%s'%at) ==0    )
     if at_not_exists_users :
         print at_not_exists_users
-        weibo = app.redis.hgetall('weibo:%s'%app.user['weibo'] )
+        weibo = app.redis.hgetall('weibo:%s'%g.user['weibo'] )
         weibo_status = ' '.join( ['@'+k for k in at_not_exists_users]) + u'  元芳,你怎么看?'
         if None and weibo :
             app.client().post("statuses/update", access_token=weibo['access_token'], status=weibo_status )
@@ -213,54 +213,53 @@ def conversation_create():
         user = app.redis.exists('user:%s'%i)
         if user :
             app.redis.zadd('user:%s:conversation_list'%i, conversation_id, time.time())
-    return redirect(redirect_url)
+    return jsonwrite({'messages':'success'})
 
 
 
 @app.route('/conversation/list',methods=['GET'])
 @access_token
 def conversation_list():
-    conversation_list = app.redis.zrange( 'user:%s:conversation_list'%app.user['name'], 0, -1, False )
+    since_id = int(request.args.get('since_id', 0) )
+    count = int( request.args.get('count', 100) )
+    rank = 0
+    if since_id is not 0 :
+        rank = app.redis.zrank('user:%s:conversation_list'%g.user['name'], since_id)
+    conversation_list = app.redis.zrange( 'user:%s:conversation_list'%g.user['name'], rank, rank+count, False )
     conv = []
     for i in conversation_list :
         c = app.redis.hgetall('conversation:%s'%i)
         c['conversation_count'] = app.redis.zcard('conversation:%s:access'%i)
         c['conversation_id'] = i
         c['latest_users'] = app.redis.zrevrange('conversation:%s:access'%i,0,4,False)
-        c['status_count'] = app.redis.llen('conversation:%s:statuses'%i)
+        c['status_count'] = app.redis.zcard('conversation:%s:statuses'%i)
         c['user'] = app.redis.hgetall( 'user:%s'%c['user_name'])
         c['updated_time'] = time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(float(c['updated_time'])))
         conv.append(c)
-    jsonwrite(conv)
+    return jsonwrite(conv)
 
 @app.route('/show/<int:conversation_id>')
 @access_token
 def conversation_show(conversation_id):
+    since_id = int(request.args.get('since_id', 0) )
+    count = int( request.args.get('count', 100) )
+    rank = 0
+    if since_id is not 0 :
+        rank = app.redis.zrank('conversation:%s:statuses'%conversation_id)
     c = app.redis.hgetall( 'conversation:%s'%conversation_id)
-    c['read_count'] = app.redis.zscore("user:%s:read_count"%app.user['name'],conversation_id)
+    c['read_count'] = app.redis.zscore("user:%s:read_count"%g.user['name'],conversation_id)
     c['conversation_count'] = app.redis.zcard('conversation:%s:access'%conversation_id)
     c['all_users'] = app.redis.zrevrange('conversation:%s:access'%conversation_id,0,-1,False)
-    c['status_count'] = app.redis.llen('conversation:%s:statuses'%conversation_id)
-    app.redis.zadd("user:%s:read_count"%app.user['name'], conversation_id, c['status_count'])
+    c['status_count'] = app.redis.zcard('conversation:%s:statuses'%conversation_id)
+    app.redis.zadd("user:%s:read_count"%g.user['name'], conversation_id, c['status_count'])
     c['updated_time'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(c['updated_time'])))
-    statuses_id_list = app.redis.lrange( 'conversation:%s:statuses'%conversation_id, 0, -1)
-    c['statuses'] = [ (app.redis.hgetall('status:%s'%status_id))  for status_id in  statuses_id_list]
+    c['statuses'] = [ (app.redis.hgetall('status:%s'%status_id))  for status_id in  app.redis.zrange('conversation:%s:statuses'%conversation_id, rank, rank+count, False) ]
     c['conversation_id']=conversation_id
     for s in c['statuses']:
         s['user'] = app.redis.hgetall( 'user:%s'%s['user_name'])
         s['created_time'] = time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(float(s['created_time'])))
-    contacts = app.redis.zrange('user:%s:contact'%app.user['name'], 0, -1, False)
-    return render_template("detail.html",user=app.user,conversation = c,contacts=contacts)
-
-
-def jsonwriteNotAscii(chunk):
-    jsonp_callback = request.args.get('jsonp_callback', '')
-    if request.method == 'GET' and isinstance(jsonp_callback, (str, unicode)):
-        js = "%s(%s)" % (jsonp_callback, json.dumps(chunk, default = json_default,ensure_ascii=False))
-    else:
-        js =  json.dumps( chunk, default = json_default,ensure_ascii=False )
-    resp = Response(js, status=200, mimetype='application/json; charset=UTF-8')
-    return resp
+    contacts = app.redis.zrange('user:%s:contact'%g.user['name'], 0, -1, False)
+    return jsonwrite(c)
 
 def jsonwrite(chunk):
     jsonp_callback = request.args.get('jsonp_callback', '')
@@ -285,6 +284,3 @@ def  json_default(obj):
 
 if __name__ == "__main__" :
     app.run('0.0.0.0',port=8888,debug=True)
-
-
-
