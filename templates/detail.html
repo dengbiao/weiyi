@@ -116,9 +116,10 @@
     <form class="form-horizontal" action="/statuses/update" method='post'>
         <div class="control-group">
             <div id="wmd-button-bar"  style="background-color: white;"></div>
-            <textarea class="field span5" name="status" id="wmd-input" rows="10"
+            <textarea class="span5" name="status" id="wmd-input" rows="10"
                       placeholder="输入内容，@元芳，只有被@的元芳才能一起交流">
             </textarea>
+
             <input type="hidden" name="conversation_id" value="{{conversation['conversation_id']}}">
         </div>
 
@@ -129,6 +130,7 @@
    </div>
 </div>
 </div>
+<div id="hidestatus" class="span5" style="z-index:-9999;position:absolute;margin-left:5px;margin-top:5px;font-size: 14px;line-height: 20px;-webkit-border-radius: 3px;-moz-border-radius: 3px;border-radius: 3px;"></div>
 {% endblock %}
 {% block js%}
 <script src="/assets/js/timeago.js" type="text/javascript" charset="utf-8"></script>
@@ -136,6 +138,7 @@
 <script type="text/javascript" src="/assets/js/Markdown.Converter.js"></script>
 <script type="text/javascript" src="/assets/js/Markdown.Sanitizer.js"></script>
 <script type="text/javascript" src="/assets/js/Markdown.Editor.js"></script>
+<script type="text/javascript" src="/assets/js/bootstrap.typeahead.js"></script>
 <script>
     (function () {
         var converter1 = Markdown.getSanitizingConverter();
@@ -154,6 +157,14 @@
 
         });
 
+
+        var contacts = new Array() ;
+        {% for con in contacts %}
+            contacts[{{loop.index0}}]='{{con|safe}}';
+            {% endfor %}
+        $('#wmd-input').typeahead({
+            source: contacts
+        });
         $("span[name='shorten']").each(function(i){
             var str = $(this).html();
             if(str.length<=200){
@@ -172,6 +183,7 @@
         $("#remove").click(function(){
             $("#allform").hide();
         });
+
         $("#plus").click(function(){
             $("#formdata").show();
             $("#allform").css("height","305px");
@@ -205,9 +217,7 @@
         replyContent.val(newContent);
         replyContent.focus();
         moveEnd(document.getElementById("wmd-input"));
-        var converter1 = Markdown.getSanitizingConverter();
-        var editor1 = new Markdown.Editor(converter1);
-        editor1.fresh();
+
     }
     var moveEnd = function(obj){
         obj.focus();
