@@ -262,7 +262,7 @@ def conversation_show(conversation_id):
     return jsonwrite(c)
 
 def jsonwrite(chunk):
-    jsonp_callback = request.args.get('jsonp_callback', '')
+    jsonp_callback = request.args.get('jsonp_callback', None)
     if request.method == 'GET' and isinstance(jsonp_callback, (str, unicode)):
         js = "%s(%s)" % (jsonp_callback, json.dumps(chunk, default = json_default))
     else:
